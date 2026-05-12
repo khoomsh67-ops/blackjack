@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aesthetic Blackjack</title>
+    <title>Aesthetic Blackjack Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -36,8 +36,9 @@
             letter-spacing: 2px;
             color: var(--gold);
             text-transform: uppercase;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             text-shadow: 0 4px 15px rgba(230, 197, 122, 0.2);
+            text-align: center;
         }
 
         /* Glassmorphism Panels */
@@ -54,29 +55,54 @@
             display: flex;
             gap: 40px;
             padding: 15px 40px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             font-size: 1.1rem;
             letter-spacing: 1px;
+            text-align: center;
         }
 
-        .dashboard span { font-weight: 700; color: var(--gold); }
+        .dashboard span { font-weight: 700; color: var(--gold); font-size: 1.3rem;}
 
-        /* Buttons */
-        .controls-wrapper { display: flex; gap: 15px; margin-bottom: 20px; }
+        /* Live Hint Box (Top) */
+        .hint-box {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            color: var(--neon-green);
+            padding: 15px 40px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 1.2rem;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(74, 222, 128, 0.05);
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.4s ease;
+            display: none; /* Toggled via JS */
+        }
+        .hint-box.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .hint-box span { color: rgba(255,255,255,0.7); font-size: 0.9rem; display: block; margin-top: 5px; font-weight: 300;}
+
+        /* Buttons & Betting */
+        .bet-controls { display: flex; gap: 15px; margin-bottom: 20px; }
         
         button {
             font-family: 'Poppins', sans-serif;
             background: rgba(0, 0, 0, 0.4);
             color: var(--text-main);
             border: 1px solid var(--glass-border);
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-size: 0.95rem;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         button:hover:not(:disabled) {
@@ -86,35 +112,40 @@
             transform: translateY(-2px);
         }
 
-        button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
+        button:active:not(:disabled) { transform: translateY(1px); }
+
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .btn-deal { background: rgba(230, 197, 122, 0.15); color: var(--gold); border-color: rgba(230, 197, 122, 0.4); }
         .btn-deal:hover:not(:disabled) { background: rgba(230, 197, 122, 0.3); }
-        
-        .btn-hint { background: rgba(74, 222, 128, 0.1); color: var(--neon-green); border-color: rgba(74, 222, 128, 0.3); }
-        .btn-hint:hover:not(:disabled) { background: rgba(74, 222, 128, 0.2); box-shadow: 0 0 15px rgba(74, 222, 128, 0.3); border-color: var(--neon-green); }
+
+        /* Game Controls (2x2 Grid) */
+        .game-controls-grid {
+            display: none; /* Toggled via JS */
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 320px;
+            margin-top: 40px;
+        }
+
+        .game-controls-grid button { padding: 16px; font-weight: 700; font-size: 1.1rem; }
+        .btn-hit { color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); }
+        .btn-stand { color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
 
         /* Table & Cards */
-        .table-area { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 50px; margin-top: 20px; }
+        .table-area { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 40px; margin-top: 10px; perspective: 1000px; }
         
         .hand-container { display: flex; flex-direction: column; align-items: center; position: relative; }
         
-        .hand-title { 
-            margin-bottom: 15px; 
-            font-weight: 500; 
-            font-size: 1rem; 
-            color: rgba(255,255,255,0.7); 
-            letter-spacing: 1px;
-        }
+        .hand-title { margin-bottom: 15px; font-weight: 500; font-size: 1rem; color: rgba(255,255,255,0.7); letter-spacing: 1px; }
         
         .cards { display: flex; justify-content: center; margin-left: 30px; }
 
-        @keyframes slideFadeIn {
-            from { opacity: 0; transform: translateY(-30px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+        /* Super Smooth Card Animation */
+        @keyframes smoothDeal {
+            0% { opacity: 0; transform: translateY(-60px) translateZ(-100px) rotateX(45deg); }
+            100% { opacity: 1; transform: translateY(0) translateZ(0) rotateX(0deg); }
         }
 
         .card {
@@ -128,10 +159,11 @@
             font-size: 2.2rem;
             font-weight: 700;
             color: #111;
-            box-shadow: -5px 5px 15px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.5);
-            margin-left: -40px; /* Overlap */
+            box-shadow: -5px 5px 15px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.5);
+            margin-left: -40px; 
             position: relative;
-            animation: slideFadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation: smoothDeal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            transform-origin: center bottom;
         }
 
         .card.red { color: #e11d48; }
@@ -145,48 +177,29 @@
 
         .player-hands-wrapper { display: flex; justify-content: center; gap: 60px; }
         
-        .active-hand { 
-            position: relative;
-        }
+        .active-hand { position: relative; }
         .active-hand::after {
             content: '';
             position: absolute;
             bottom: -20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 50px;
-            height: 3px;
+            width: 60px;
+            height: 4px;
             background: var(--gold);
-            border-radius: 3px;
-            box-shadow: 0 0 10px var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 15px var(--gold);
         }
 
-        /* Notifications & Hints */
         .message-box { 
             height: 25px; 
-            margin: 10px 0 25px 0; 
-            font-size: 1.1rem; 
-            font-weight: 300; 
-            color: rgba(255,255,255,0.8);
+            margin: 5px 0 20px 0; 
+            font-size: 1.2rem; 
+            font-weight: 500; 
+            color: var(--gold);
             letter-spacing: 1px;
-        }
-
-        .hint-box {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            color: var(--neon-green);
-            padding: 15px 30px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-weight: 500;
-            font-size: 1.1rem;
-            display: none;
-            border: 1px solid rgba(74, 222, 128, 0.3);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(74, 222, 128, 0.05);
             text-align: center;
-            animation: slideFadeIn 0.3s ease-out;
         }
-        .hint-box span { color: rgba(255,255,255,0.6); font-size: 0.85rem; display: block; margin-top: 8px; font-weight: 300;}
 
     </style>
 </head>
@@ -199,14 +212,16 @@
         <div>Wager <br>$<span id="current-bet">100</span></div>
     </div>
 
-    <div class="controls-wrapper" id="bet-controls">
+    <!-- Always Visible Hint Box -->
+    <div class="hint-box" id="hint-box"></div>
+
+    <div class="message-box" id="message-box">Place your wager to begin.</div>
+
+    <div class="bet-controls" id="bet-controls">
         <button onclick="adjustBet(-100)">- $100</button>
         <button onclick="adjustBet(100)">+ $100</button>
         <button onclick="startGame()" class="btn-deal">Deal Hand</button>
     </div>
-
-    <div class="hint-box" id="hint-box"></div>
-    <div class="message-box" id="message-box">Place your wager to begin.</div>
 
     <div class="table-area">
         <div class="hand-container" id="dealer-area">
@@ -217,12 +232,12 @@
         <div class="player-hands-wrapper" id="player-area"></div>
     </div>
 
-    <div class="controls-wrapper" id="game-controls" style="margin-top: 50px; display: none;">
-        <button id="btn-hit" onclick="hit()">Hit</button>
-        <button id="btn-stand" onclick="stand()">Stand</button>
+    <!-- 2x2 Grid Layout For Game Controls -->
+    <div class="game-controls-grid" id="game-controls">
+        <button id="btn-hit" class="btn-hit" onclick="hit()">Hit</button>
+        <button id="btn-stand" class="btn-stand" onclick="stand()">Stand</button>
         <button id="btn-double" onclick="doubleDown()">Double</button>
         <button id="btn-split" onclick="split()">Split</button>
-        <button id="btn-hint" class="btn-hint" onclick="showHint()">Optimal Move</button>
     </div>
 
 <script>
@@ -301,7 +316,6 @@
         activeHandIndex = 0;
         dealerHidden = true;
         gameState = 'playing';
-        document.getElementById('hint-box').style.display = 'none';
 
         let pScore = calculateScore(playerHands[0].cards);
         if (pScore === 21) {
@@ -319,19 +333,15 @@
         let hand = playerHands[activeHandIndex];
         hand.cards.push(getCard());
         let score = calculateScore(hand.cards);
-        document.getElementById('hint-box').style.display = 'none';
         
         if (score >= 21) {
             if (score > 21) hand.busted = true;
-            setTimeout(advanceHand, 500); // Slight delay for aesthetic feel
-            updateUI();
-        } else {
-            updateUI();
-        }
+            setTimeout(advanceHand, 500); 
+        } 
+        updateUI();
     }
 
     function stand() {
-        document.getElementById('hint-box').style.display = 'none';
         playerHands[activeHandIndex].isStand = true;
         advanceHand();
     }
@@ -340,7 +350,6 @@
         let hand = playerHands[activeHandIndex];
         if (hand.cards.length !== 2 || bankroll < hand.bet) return; 
         
-        document.getElementById('hint-box').style.display = 'none';
         bankroll -= hand.bet;
         hand.bet *= 2;
         hand.cards.push(getCard());
@@ -357,9 +366,7 @@
         let hand = playerHands[activeHandIndex];
         if (hand.cards.length !== 2 || hand.cards[0].weight !== hand.cards[1].weight || bankroll < hand.bet || playerHands.length > 1) return;
 
-        document.getElementById('hint-box').style.display = 'none';
         bankroll -= hand.bet;
-        
         let splitCard = hand.cards.pop();
         hand.cards.push(getCard()); 
         
@@ -449,8 +456,19 @@
         updateUI();
     }
 
-    function showHint() {
-        if (gameState !== 'playing') return;
+    // --- AUTOMATIC HINT ENGINE ---
+    function updateHintDisplay() {
+        let hintBox = document.getElementById('hint-box');
+        
+        if (gameState !== 'playing') {
+            hintBox.classList.remove('visible');
+            setTimeout(() => { if(gameState !== 'playing') hintBox.style.display = 'none'; }, 400);
+            return;
+        }
+
+        hintBox.style.display = 'block';
+        setTimeout(() => hintBox.classList.add('visible'), 50);
+
         let hand = playerHands[activeHandIndex];
         let pCards = hand.cards;
         let pScore = calculateScore(pCards);
@@ -463,10 +481,8 @@
         let isSoft = pCards.some(c => c.value === 'A') && pScore <= 21 && calculateScore(pCards.filter(c => c.value !== 'A')) <= 10;
         
         let advice = "Stand";
-        let logicType = "";
 
         if (isPair && canSplit) {
-            logicType = "Pair Splitting Strategy";
             let pairVal = pCards[0].weight;
             if (pairVal === 11 || pairVal === 8) advice = "Split"; 
             else if (pairVal === 10) advice = "Stand";
@@ -478,7 +494,6 @@
             else if (pairVal === 2 || pairVal === 3) advice = (dCardVal <= 7) ? "Split" : "Hit";
         } 
         else if (isSoft) {
-            logicType = "Soft Total Strategy";
             if (pScore >= 19) advice = "Stand";
             else if (pScore === 18) {
                 if (dCardVal >= 3 && dCardVal <= 6) advice = "Double";
@@ -490,7 +505,6 @@
             else if (pScore === 13 || pScore === 14) advice = (dCardVal >= 5 && dCardVal <= 6) ? "Double" : "Hit";
         } 
         else { 
-            logicType = "Hard Total Strategy";
             if (pScore >= 17) advice = "Stand";
             else if (pScore >= 13 && pScore <= 16) advice = (dCardVal <= 6) ? "Stand" : "Hit";
             else if (pScore === 12) advice = (dCardVal >= 4 && dCardVal <= 6) ? "Stand" : "Hit";
@@ -500,14 +514,10 @@
             else advice = "Hit";
         }
 
-        if (advice === "Double" && !canDouble) {
-            advice = (isSoft && pScore === 18) ? "Stand" : "Hit";
-        }
+        if (advice === "Double" && !canDouble) advice = (isSoft && pScore === 18) ? "Stand" : "Hit";
 
-        let hintBox = document.getElementById('hint-box');
-        hintBox.style.display = 'block';
-        hintBox.innerHTML = `OPTIMAL MOVE: ${advice.toUpperCase()} 
-                             <span>Matrix: ${logicType} against Dealer ${dCardVal === 11 ? 'Ace' : dCardVal}</span>`;
+        hintBox.innerHTML = `PRO MOVE: ${advice.toUpperCase()} 
+                             <span>Your total is ${pScore} against Dealer's ${dCardVal === 11 ? 'Ace' : dCardVal}</span>`;
     }
 
     function renderCard(card, isHidden = false) {
@@ -552,7 +562,7 @@
         document.getElementById('bet-controls').style.display = gameState === 'betting' ? 'flex' : 'none';
         
         let controlsDiv = document.getElementById('game-controls');
-        controlsDiv.style.display = gameState === 'playing' ? 'flex' : 'none';
+        controlsDiv.style.display = gameState === 'playing' ? 'grid' : 'none';
 
         if (gameState === 'playing') {
             let currentHand = playerHands[activeHandIndex];
@@ -564,6 +574,8 @@
             document.getElementById('btn-double').disabled = !canDouble;
             document.getElementById('btn-split').disabled = !canSplit;
         }
+
+        updateHintDisplay(); // Trigger automatic hint
     }
 
     function showMessage(msg) {
